@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miracema Biscuit & 3D</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#FBF6EE;--card:#fff;--tx:#3b2414;--mu:#8a6f5a;--br:#6B3419;--ac:#C98A4B;--cr:#F5DDBB;--ln:#ecdcc6;--ok:#3d8b5a;--bad:#b84a3a}
+[data-theme=dark]{--bg:#1d1510;--card:#2a1f17;--tx:#f5e6d3;--mu:#b89c82;--br:#e0a56b;--ac:#C98A4B;--cr:#3a2a1e;--ln:#4a3828}
+*{box-sizing:border-box}body{margin:0;font-family:Nunito,system-ui,sans-serif;background:var(--bg);color:var(--tx)}
+#app{display:none;min-height:100vh}#side{width:220px;background:var(--cr);padding:16px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+#side img{width:100%;margin-bottom:12px}.lb{display:none}[data-theme=dark] .lb{display:block}[data-theme=dark] .ld{display:none}
+#side a{padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:700;color:var(--tx)}#side a.on{background:var(--br);color:#fff}
+#side .sp{flex:1}#main{flex:1;padding:24px;min-width:0}
+h1{margin:0 0 16px;font-size:26px;color:var(--br)}h3{color:var(--br);margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:18px;padding:16px}
+.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kp b{display:block;font-size:24px;color:var(--br)}.kp span{color:var(--mu);font-size:13px}
+.gr{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:12px}
+button{font:inherit;font-weight:800;background:var(--br);color:#fff;border:0;border-radius:12px;padding:10px 16px;cursor:pointer}
+button.g{background:transparent;color:var(--br);border:2px solid var(--br)}button.ic{background:none;padding:4px 6px;font-size:16px}
+input,select{font:inherit;width:100%;padding:9px 10px;border:1.5px solid var(--ln);border-radius:10px;background:var(--bg);color:var(--tx)}
+label{display:block;font-size:13px;color:var(--mu);font-weight:700;margin-bottom:10px}label input,label select{margin-top:4px}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:13px;color:var(--mu);padding:8px}td{padding:8px;border-top:1px solid var(--ln)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.row{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+#mw{display:none;position:fixed;inset:0;background:#0007;place-items:center;padding:12px;z-index:9}#md{background:var(--card);border-radius:18px;padding:20px;width:560px;max-width:100%;max-height:92vh;overflow:auto}
+#login{display:none;min-height:100vh;place-items:center}#login form{width:340px;text-align:center}#login img{width:100%}
+.res{position:sticky;top:12px;background:var(--br);color:#fff;border-radius:18px;padding:18px}.res b{font-size:30px}.res div{display:flex;justify-content:space-between;padding:3px 0}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid #0003;vertical-align:middle;margin-right:6px}
+.bar{height:8px;border-radius:6px;background:var(--ln)}.bar i{display:block;height:100%;border-radius:6px;background:var(--ac)}
+.low{color:var(--bad);font-weight:800}
+@media(max-width:760px){#app{flex-direction:column}#side{width:100%;height:auto;position:static;flex-direction:row;flex-wrap:wrap}#side img{display:none}#side .sp{display:none}.g2{grid-template-columns:1fr}}
+</style></head><body>
+
+<div id=login><form onsubmit="login();return false"><img src="logo-marrom.png" alt="Miracema Artes Biscuit 3D">
+<label>E-mail<input id=em type=email required></label><label>Senha<input id=pw type=password required></label><button style="width:100%">Entrar</button></form></div>
+
+<div id=app><nav id=side><img class=ld src="logo-marrom.png" alt="Miracema"><img class=lb src="logo-branca.png" alt="Miracema"><div id=nav></div><div class=sp></div>
+<a onclick="tema()">🌓 Claro / escuro</a><a onclick="sb.auth.signOut().then(()=>location.reload())">Sair</a></nav><main id=main></main></div>
+<div id=mw onclick="if(event.target==this)cm()"><div id=md></div></div>
+
+<script>
+/* ===== CONFIGURE AQUI (Supabase > Project Settings > API) ===== */
+const SB_URL='https://aeiruqxdyyvxtsgwshin.supabase.co/rest/v1/', SB_KEY='sb_publishable_J48MEGREl58V1Iy6UQME-g_rVUEx1jI';
+/* =============================================================== */
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const $=s=>document.querySelector(s),R=v=>(+v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),N=v=>+v||0;
+const T=['configuracoes','impressoras','filamentos','pecas','kits','kit_itens','vendas','itens_venda'];
+let D={},cur='dashboard',S={items:[],desc:0},ch=[];
+const NAV=[['dashboard','📊 Dashboard'],['pecas','🧩 Peças'],['kits','🎁 Kits'],['vendas','🛒 Vendas'],['calc','🧮 Calculadora'],['filamentos','🧵 Filamentos'],['config','⚙️ Configurações']];
+const F={
+ pecas:[['nome','Nome da peça','text'],['categoria','Categoria','text'],['material','Material','select',['PLA','PETG','ABS','TPU','Biscuit']],['gramas','Gramas','number'],['horas','Horas de impressão','number'],['custo','Custo (R$)','number'],['preco','Preço de venda (R$)','number']],
+ filamentos:[['cor','Cor','text'],['hex','Tom','color'],['marca','Marca','text'],['material','Material','select',['PLA','PETG','ABS','TPU']],['preco_kg','Preço do kg (R$)','number'],['peso_rolo','Peso do rolo (g)','number'],['gramas_restantes','Gramas restantes','number'],['alerta_gramas','Avisar abaixo de (g)','number']],
+ impressoras:[['nome','Nome','text'],['watts','Consumo (W)','number']],
+ configuracoes:[['tarifa_kwh','Tarifa de energia (R$/kWh)','number'],['margem_padrao','Margem padrão (%)','number'],['falhas_pct','Falhas (%)','number'],['desgaste_hora','Desgaste da máquina (R$/hora)','number'],['embalagem','Embalagem (R$)','number'],['mao_obra_hora','Mão de obra (R$/hora)','number'],['meta_mensal','Meta mensal (R$)','number']]};
+
+const tema=()=>{const d=document.documentElement;d.dataset.theme=d.dataset.theme=='dark'?'':'dark';localStorage.setItem('t',d.dataset.theme);go(cur)};
+try{document.documentElement.dataset.theme=localStorage.getItem('t')||''}catch(e){}
+async function load(){for(const t of T){const{data,error}=await sb.from(t).select('*').order('id');if(error)alert(t+': '+error.message);D[t]=data||[]}D.cfg=D.configuracoes[0]||{}}
+async function init(){const{data}=await sb.auth.getSession();data.session?start():$('#login').style.display='grid'}
+async function login(){const{error}=await sb.auth.signInWithPassword({email:$('#em').value,password:$('#pw').value});error?alert('Não entrou: '+error.message):start()}
+async function start(){$('#login').style.display='none';$('#app').style.display='flex';await load();go('dashboard')}
+function go(v){cur=v;ch.forEach(c=>c.destroy());ch=[];$('#nav').innerHTML=NAV.map(([k,l])=>`<a class="${k==v?'on':''}" onclick="go('${k}')" style="display:block">${l}</a>`).join('');$('#main').innerHTML=V[v]();P[v]&&P[v]()}
+const cm=()=>$('#mw').style.display='none';
+const tb=(h,rows)=>rows.length?`<div class=tw><table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table></div>`:'<p style="color:var(--mu)">Nada por aqui ainda. Use o botão de cadastro acima.</p>';
+const acts=(t,id)=>`<button class=ic title=Editar onclick="${t=='kits'?'ekit':'edit'}(${t=='kits'?'':`'${t}',`}${id})">✏️</button><button class=ic title=Excluir onclick="del('${t}',${id})">🗑️</button>`;
+const opt=(l,s)=>l.map(x=>`<option ${x==s?'selected':''}>${x}</option>`).join('');
+const dot=f=>f?`<span class=dot style="background:${f.hex}"></span>${f.cor}`:'-';
+
+function edit(t,id){const v=D[t].find(x=>x.id==id)||{};$('#md').innerHTML=`<form onsubmit="return sv(event,'${t}',${id||0})"><h3>${id?'Editar':'Novo cadastro'}</h3>${F[t].map(([k,l,ty,o])=>`<label>${l}${ty=='select'?`<select name=${k}>${opt(o,v[k])}</select>`:`<input name=${k} type=${ty} step=any value="${v[k]??''}">`}</label>`).join('')}<div class=row><button type=button class=g onclick=cm()>Cancelar</button><button>Salvar</button></div></form>`;$('#mw').style.display='grid'}
+async function sv(e,t,id){e.preventDefault();const o={};new FormData(e.target).forEach((v,k)=>o[k]=v===''?null:v);const{error}=await(id?sb.from(t).update(o).eq('id',id):sb.from(t).insert(o));if(error)return alert(error.message);cm();await load();go(cur);return false}
+async function del(t,id){if(!confirm('Excluir este item?'))return;const{error}=await sb.from(t).delete().eq('id',id);if(error)return alert(error.message);await load();go(cur)}
+async function upd(t,id,o){await sb.from(t).update(o).eq('id',id);await load();go(cur)}
+
+/* ---- Kits ---- */
+function ekit(id){const k=D.kits.find(x=>x.id==id)||{};const q=p=>(D.kit_itens.find(i=>i.kit_id==id&&i.peca_id==p.id)||{}).qtd||0;
+$('#md').innerHTML=`<form onsubmit="return svk(event,${id||0})"><h3>Kit</h3><label>Nome do kit<input name=nome value="${k.nome||''}" required></label><label>Desconto no total (%)<input name=desconto_pct type=number step=any value="${k.desconto_pct??10}"></label><p><b>Quantidade de cada peça no kit</b> (0 = fora do kit)</p>${D.pecas.map(p=>`<label>${p.nome}<input type=number min=0 name="p${p.id}" value="${q(p)}"></label>`).join('')}<div class=row><button type=button class=g onclick=cm()>Cancelar</button><button>Salvar kit</button></div></form>`;$('#mw').style.display='grid'}
+async function svk(e,id){e.preventDefault();const f=new FormData(e.target),o={nome:f.get('nome'),desconto_pct:N(f.get('desconto_pct'))};let kid=id;if(id)await sb.from('kits').update(o).eq('id',id);else{const{data}=await sb.from('kits').insert(o).select().single();kid=data.id}
+await sb.from('kit_itens').delete().eq('kit_id',kid);const it=D.pecas.map(p=>({kit_id:kid,peca_id:p.id,qtd:N(f.get('p'+p.id))})).filter(i=>i.qtd>0);if(it.length)await sb.from('kit_itens').insert(it);cm();await load();go('kits');return false}
+
+/* ---- Vendas ---- */
+const keep=()=>{if($('#vd')){S.data=$('#vd').value;S.cli=$('#vc').value;S.k=$('#vk').value;S.s=$('#vs').value}};
+function vnew(){S={items:[],desc:0};rv();$('#mw').style.display='grid'}
+function addP(id){keep();const p=D.pecas.find(x=>x.id==id);if(!p)return;S.items.push({peca_id:p.id,nome:p.nome,qtd:1,valor:N(p.preco),custo:N(p.custo),fil:''});rv()}
+function addK(id){keep();const k=D.kits.find(x=>x.id==id);if(!k)return;D.kit_itens.filter(i=>i.kit_id==id).forEach(i=>{const p=D.pecas.find(x=>x.id==i.peca_id);S.items.push({peca_id:p.id,nome:p.nome,qtd:i.qtd,valor:N(p.preco),custo:N(p.custo),fil:''})});S.desc=N(k.desconto_pct);rv()}
+function rv(){keep();const sub=S.items.reduce((a,i)=>a+i.qtd*i.valor,0),tot=sub*(1-S.desc/100),cus=S.items.reduce((a,i)=>a+i.qtd*i.custo,0);
+$('#md').innerHTML=`<h3>Nova venda</h3><div class=g2><label>Data<input id=vd type=date value="${S.data||new Date().toISOString().slice(0,10)}"></label><label>Cliente<input id=vc value="${S.cli||''}"></label><label>Canal<select id=vk>${opt(['Presencial','WhatsApp'],S.k)}</select></label><label>Status<select id=vs>${opt(['Na fila','Imprimindo','Pronto','Entregue'],S.s)}</select></label></div>
+<div class=g2><label>Adicionar peça<select onchange="addP(this.value)"><option value="">Escolher...${D.pecas.map(p=>`<option value=${p.id}>${p.nome}</option>`).join('')}</select></label><label>Adicionar kit<select onchange="addK(this.value)"><option value="">Escolher...${D.kits.map(k=>`<option value=${k.id}>${k.nome}</option>`).join('')}</select></label></div>
+${tb(['Peça','Cor','Qtd','Valor un.',''],S.items.map((i,n)=>[i.nome,`<select onchange="S.items[${n}].fil=this.value"><option value="">-${D.filamentos.map(f=>`<option value=${f.id} ${f.id==i.fil?'selected':''}>${f.cor} (${f.material})</option>`).join('')}</select>`,`<input type=number min=1 style="width:64px" value=${i.qtd} onchange="S.items[${n}].qtd=N(this.value);rv()">`,`<input type=number step=any style="width:90px" value=${i.valor} onchange="S.items[${n}].valor=N(this.value);rv()">`,`<button class=ic onclick="S.items.splice(${n},1);rv()">✖</button>`]))}
+<label>Desconto no total (%)<input type=number step=any value=${S.desc} onchange="keep();S.desc=N(this.value);rv()"></label>
+<p>Subtotal ${R(sub)} | <b>Total ${R(tot)}</b> | Custo ${R(cus)} | Lucro ${R(tot-cus)}</p><div class=row><button class=g onclick=cm()>Cancelar</button><button onclick=vsave()>Salvar venda</button></div>`}
+async function vsave(){keep();if(!S.items.length)return alert('Adicione pelo menos uma peça.');const sub=S.items.reduce((a,i)=>a+i.qtd*i.valor,0),cus=S.items.reduce((a,i)=>a+i.qtd*i.custo,0);
+const{data,error}=await sb.from('vendas').insert({data:S.data,cliente:S.cli,canal:S.k||'Presencial',status:S.s||'Na fila',desconto_pct:S.desc,total:sub*(1-S.desc/100),custo:cus}).select().single();if(error)return alert(error.message);
+await sb.from('itens_venda').insert(S.items.map(i=>({venda_id:data.id,peca_id:i.peca_id,filamento_id:i.fil||null,nome:i.nome,qtd:i.qtd,valor_unit:i.valor,custo_unit:i.custo})));
+for(const i of S.items){const f=D.filamentos.find(x=>x.id==i.fil),p=D.pecas.find(x=>x.id==i.peca_id);if(f&&p){f.gramas_restantes=N(f.gramas_restantes)-N(p.gramas)*i.qtd;await sb.from('filamentos').update({gramas_restantes:f.gramas_restantes}).eq('id',f.id)}}
+cm();await load();go('vendas')}
+
+/* ---- Calculadora ---- */
+function calc(){const c=D.cfg,g=N($('#cg').value),h=N($('#ch').value),pk=N($('#cp').value),w=N($('#cw').value),tf=N($('#ct').value),
+fil=g/1000*pk,en=w/1000*h*tf,des=N($('#cd').value)*h,emb=N($('#ce').value),mo=N($('#cm').value)/60*N(c.mao_obra_hora),sub=fil+en+des+emb+mo,fa=sub*N($('#cf').value)/100,cu=sub+fa,mg=N($('#cx').value),pr=cu*(1+mg/100);
+$('#cr').innerHTML=[['Filamento',fil],['Energia',en],['Desgaste',des],['Falhas',fa],['Embalagem',emb],['Mão de obra',mo]].map(([a,b])=>`<div><span>${a}</span><span>${R(b)}</span></div>`).join('')+`<hr><div><span>Custo total</span><b style="font-size:20px">${R(cu)}</b></div><p style="margin:12px 0 0">Preço de venda</p><b>${R(pr)}</b><div><span>Lucro</span><span>${R(pr-cu)}</span></div><div class=row><button style="background:var(--cr);color:var(--br)" onclick="svpeca(${cu},${pr})">Salvar como peça</button></div>`;window.CC={g,h}}
+async function svpeca(cu,pr){const n=prompt('Nome da peça:');if(!n)return;await sb.from('pecas').insert({nome:n,gramas:CC.g,horas:CC.h,custo:+cu.toFixed(2),preco:+pr.toFixed(2)});await load();go('pecas')}
+function pickF(id){const f=D.filamentos.find(x=>x.id==id);if(f){$('#cp').value=f.preco_kg;calc()}}
+function pickI(id){const i=D.impressoras.find(x=>x.id==id);if(i){$('#cw').value=i.watts;calc()}}
+
+/* ---- Telas ---- */
+const V={
+dashboard(){const m=new Date().toISOString().slice(0,7),vm=D.vendas.filter(v=>v.data.startsWith(m)),fat=vm.reduce((a,v)=>a+N(v.total),0),luc=fat-vm.reduce((a,v)=>a+N(v.custo),0),pc=D.itens_venda.filter(i=>D.vendas.find(v=>v.id==i.venda_id&&v.data.startsWith(m))).reduce((a,i)=>a+i.qtd,0),fila=D.vendas.filter(v=>['Na fila','Imprimindo'].includes(v.status)).length,pend=D.vendas.filter(v=>!v.pago).reduce((a,v)=>a+N(v.total),0),meta=N(D.cfg.meta_mensal),pct=meta?Math.min(100,fat/meta*100):0,baixo=D.filamentos.filter(f=>N(f.gramas_restantes)<=N(f.alerta_gramas));
+return `<h1>Dashboard</h1><div class=kp><div class=card><span>Faturado no mês</span><b>${R(fat)}</b></div><div class=card><span>Lucro no mês</span><b>${R(luc)}</b></div><div class=card><span>Peças vendidas</span><b>${pc}</b></div><div class=card><span>Na fila</span><b>${fila}</b></div><div class=card><span>A receber</span><b>${R(pend)}</b></div></div>
+<div class=card style="margin-bottom:12px"><span>Meta do mês: ${R(meta)} (${pct.toFixed(0)}%)</span><div class=bar><i style="width:${pct}%"></i></div></div>
+<div class=gr><div class=card><h3>Faturamento por mês</h3><canvas id=c1></canvas></div><div class=card><h3>Peças mais vendidas</h3><canvas id=c2></canvas></div></div>
+<div class=gr><div class=card><h3>Vendas por canal</h3><canvas id=c3></canvas></div><div class=card><h3>Estoque baixo</h3>${baixo.length?baixo.map(f=>`<p class=low>${dot(f)} ${Math.round(f.gramas_restantes)}g</p>`).join(''):'<p>Tudo certo com os filamentos.</p>'}</div></div>`},
+pecas(){return `<div class=top><h1>Peças e preços</h1><button onclick="edit('pecas')">+ Nova peça</button></div><div class=card>${tb(['Peça','Categoria','g','h','Custo','Preço','Margem',''],D.pecas.map(p=>[p.nome,p.categoria||'-',p.gramas,p.horas,R(p.custo),`<b>${R(p.preco)}</b>`,N(p.custo)?Math.round((p.preco/p.custo-1)*100)+'%':'-',acts('pecas',p.id)]))}</div>`},
+kits(){return `<div class=top><h1>Kits com desconto</h1><button onclick="ekit(0)">+ Novo kit</button></div><div class=card>${tb(['Kit','Itens','Sem desconto','Desconto','Preço do kit',''],D.kits.map(k=>{const its=D.kit_itens.filter(i=>i.kit_id==k.id),s=its.reduce((a,i)=>a+i.qtd*N((D.pecas.find(p=>p.id==i.peca_id)||{}).preco),0);return[k.nome,its.map(i=>i.qtd+'x '+((D.pecas.find(p=>p.id==i.peca_id)||{}).nome||'?')).join(', '),R(s),k.desconto_pct+'%',`<b>${R(s*(1-k.desconto_pct/100))}</b>`,acts('kits',k.id)]}))}</div>`},
+vendas(){return `<div class=top><h1>Vendas</h1><button onclick=vnew()>+ Nova venda</button></div><div class=card>${tb(['Data','Cliente','Canal','Total','Lucro','Status','Pago',''],[...D.vendas].reverse().map(v=>[v.data.split('-').reverse().join('/'),v.cliente||'-',v.canal,`<b>${R(v.total)}</b>`,R(v.total-v.custo),`<select onchange="upd('vendas',${v.id},{status:this.value})">${opt(['Na fila','Imprimindo','Pronto','Entregue'],v.status)}</select>`,`<input type=checkbox style="width:20px" ${v.pago?'checked':''} onchange="upd('vendas',${v.id},{pago:this.checked})">`,acts('vendas',v.id).replace(/<button class=ic title=Editar.*?<\/button>/,'')]))}</div>`},
+calc(){const c=D.cfg;return `<h1>Calculadora de custos</h1><div class=gr style="grid-template-columns:2fr 1fr"><div class=card><h3>Filamento</h3><div class=g2><label>Usar do estoque<select onchange="pickF(this.value)"><option value="">Escolher...${D.filamentos.map(f=>`<option value=${f.id}>${f.cor} ${f.material}</option>`).join('')}</select></label><label>Preço do kg (R$)<input id=cp type=number step=any value=120 oninput=calc()></label></div>
+<h3>Fatiador</h3><div class=g2><label>Gramas usadas<input id=cg type=number step=any value=0 oninput=calc()></label><label>Duração (horas)<input id=ch type=number step=any value=0 oninput=calc()></label></div>
+<h3>Energia</h3><div class=g2><label>Impressora<select onchange="pickI(this.value)"><option value="">Escolher...${D.impressoras.map(i=>`<option value=${i.id}>${i.nome}</option>`).join('')}</select></label><label>Consumo (W)<input id=cw type=number value=110 oninput=calc()></label><label>Tarifa (R$/kWh)<input id=ct type=number step=any value=${c.tarifa_kwh} oninput=calc()></label></div>
+<h3>Extras</h3><div class=g2><label>Desgaste (R$/hora)<input id=cd type=number step=any value=${c.desgaste_hora} oninput=calc()></label><label>Falhas (%)<input id=cf type=number step=any value=${c.falhas_pct} oninput=calc()></label><label>Embalagem (R$)<input id=ce type=number step=any value=${c.embalagem} oninput=calc()></label><label>Pós-processo (min)<input id=cm type=number value=0 oninput=calc()></label></div>
+<h3>Lucro</h3><label>Margem sobre o custo (%)<input id=cx type=number value=${c.margem_padrao} oninput=calc()></label></div><div><div class=res id=cr></div></div></div>`},
+filamentos(){return `<div class=top><h1>Filamentos</h1><button onclick="edit('filamentos')">+ Novo filamento</button></div><div class=card>${tb(['Cor','Material','Marca','R$/kg','Estoque',''],D.filamentos.map(f=>{const p=Math.max(0,Math.min(100,N(f.gramas_restantes)/N(f.peso_rolo||1000)*100));return[dot(f),f.material,f.marca||'-',R(f.preco_kg),`<div class=bar style="min-width:100px"><i style="width:${p}%"></i></div><span class="${N(f.gramas_restantes)<=N(f.alerta_gramas)?'low':''}">${Math.round(f.gramas_restantes)}g</span>`,acts('filamentos',f.id)]}))}</div>`},
+config(){const c=D.cfg;return `<div class=top><h1>Configurações</h1><button onclick="edit('configuracoes',1)">Editar valores padrão</button></div><div class=card>${tb(['Tarifa kWh','Margem','Falhas','Desgaste/h','Embalagem','Mão de obra/h','Meta'],[[R(c.tarifa_kwh),c.margem_padrao+'%',c.falhas_pct+'%',R(c.desgaste_hora),R(c.embalagem),R(c.mao_obra_hora),R(c.meta_mensal)]])}</div><div class=top style="margin-top:20px"><h3>Impressoras</h3><button onclick="edit('impressoras')">+ Impressora</button></div><div class=card>${tb(['Nome','Watts',''],D.impressoras.map(i=>[i.nome,i.watts+' W',acts('impressoras',i.id)]))}</div>`}};
+const P={calc,dashboard(){const css=getComputedStyle(document.body),br=css.getPropertyValue('--br'),ac=css.getPropertyValue('--ac'),mk=(id,type,labels,data,o={})=>ch.push(new Chart($(id),{type,data:{labels,datasets:[{data,backgroundColor:type=='doughnut'?[br,ac,'#e8c9a0','#a0643a']:br,borderRadius:6}]},options:{plugins:{legend:{display:type=='doughnut'}},...o}}));
+const mes={};D.vendas.forEach(v=>{const k=v.data.slice(0,7);mes[k]=(mes[k]||0)+N(v.total)});const ks=Object.keys(mes).sort();mk('#c1','bar',ks.map(k=>k.split('-').reverse().join('/')),ks.map(k=>mes[k]));
+const top={};D.itens_venda.forEach(i=>top[i.nome]=(top[i.nome]||0)+i.qtd);const tp=Object.entries(top).sort((a,b)=>b[1]-a[1]).slice(0,5);mk('#c2','bar',tp.map(x=>x[0]),tp.map(x=>x[1]),{indexAxis:'y'});
+const can={};D.vendas.forEach(v=>can[v.canal]=(can[v.canal]||0)+N(v.total));mk('#c3','doughnut',Object.keys(can),Object.values(can))}};
+init();
+</script></body></html>
